@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  TEAM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELED
+}
+
+enum EssayStatus {
+  DRAFT
+  REVIEWING
+  COMPLETED
+}
+
+enum ReviewerType {
+  STUDENT
+  AI
+}
+
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  passwordHash    String
+  fullName        String
+  gradeLevel      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  subscription    Subscription?
+  essays          Essay[]
+}
+
+model Subscription {
+  id            String               @id @default(cuid())
+  userId        String               @unique
+  plan          SubscriptionPlan
+  status        SubscriptionStatus   @default(ACTIVE)
+  startedAt     DateTime             @default(now())
+  currentPeriodEndsAt DateTime?
+  user          User                 @relation(fields: [userId], references: [id])
+}
+
+model Essay {
+  id              String           @id @default(cuid())
+  userId          String
+  gradeLevel      String
+  essayType       String
+  requirements    String
+  prompt          String
+  aiDraft         String
+  currentText     String
+  status          EssayStatus      @default(DRAFT)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  studentRating   Int?
+  aiRating        Int?
+  aiCommentary    String?
+  revisions       EssayRevision[]
+  user            User             @relation(fields: [userId], references: [id])
+}
+
+model EssayRevision {
+  id           String       @id @default(cuid())
+  essayId      String
+  iteration    Int
+  reviewer     ReviewerType
+  feedback     String
+  rating       Int?
+  revisedText  String?
+  createdAt    DateTime     @default(now())
+  essay        Essay        @relation(fields: [essayId], references: [id])
+}
